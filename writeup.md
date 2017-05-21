@@ -13,13 +13,12 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
+[image1]: ./writeup_images/undistort_output.jpg "Undistorted"
+[image2]: ./writeup_images/distortion_corrected.jpg "Distortion Corrected"
+[image3]: ./writeup_images/binary_combo_example.jpg "Binary Example"
+[image4]: ./writeup_images/warped_straight_lines.jpg "Warp Example"
+[image5]: ./writeup_images/color_fit_lines.jpg "Fit Visual"
+[image6]: ./writeup_images/processed_output.jpg "Output"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -35,7 +34,7 @@ You're reading it!
 
 #### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
-The code for this step is contained in the first code cell of the IPython notebook located in "./examples/example.ipynb" (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in the first section the IPython notebook located in `Workbook.ipynb`, labelled under **Camera Calibration**.
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
@@ -43,74 +42,89 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 
 ![alt text][image1]
 
-###Pipeline (single images)
+Calibration data is then saved to "./camera_cal/dist_pickle.p" to be used in later part of the notebook.
 
-####1. Provide an example of a distortion-corrected image.
+A `undistort()` function was also created to simplify calling of the `cv2.undistort()`
+
+### Pipeline (single images)
+
+#### 1. Provide an example of a distortion-corrected image.
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 ![alt text][image2]
-####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+
+#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+I used a combination of Red channel from RGB and B channel from LAB to generate a binary image (thresholding steps under section **Create Binary Thresholded Image** in `Workbook.ipynb`).  Here's an example of my output for this step.
 
 ![alt text][image3]
 
-####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes a function called `perspective_transform()`, which is defined in section **Apply a perspective transform to rectify binary image** under `Workbook.ipynb`.  The `perspective_transform()` function takes as inputs an image (`image`), as well as a boolean variable `topdown` to calculate either `M` or `Minv`.  I chose the hardcode the source and destination points in the following manner:
 
 ```
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+src = np.float32([[190,720], [584,457], [705,457], [1145,720]])
+    new_top_left = np.array([src[0,0], 0])
+    new_top_right = np.array([src[3,0], 0])
+    offset = [150,0]
 
+    dst = np.float32([src[0]+offset,
+                      new_top_left+offset,
+                      new_top_right-offset,
+                      src[3]-offset])
 ```
 This resulted in the following source and destination points:
 
 | Source        | Destination   |
 |:-------------:|:-------------:|
-| 585, 460      | 320, 0        |
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 190, 720      | 340, 720 |
+| 584, 457      | 340, 0 |
+| 705, 457      | 995, 0 |
+| 1145, 720     | 995, 720 |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
 ![alt text][image4]
 
-####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The work to indentify lane-line pixels and fit their positions are in section **Locate the Lane Lines and Fit a Polynomial** in `Workbook.ipynb`. This is done using the **Peaks in a Histogram** method as taught in class.
+
+The function first takes a histogram of second half of the image. Then it finds peaks of the two halfs of the histogram. These two are the starting point of the left and right lanes.
+
+The function then divides the image in y-axis into 9 to create sliding windows. Starting from the bottom, it searchs upwards from the two starting point. Allowing to be recentered within +/- 100 pixels if minimum of 50 pixels are detected from the histogram.
+
+After some processing, two second order polynomial is fitted over the left and right lane data. An example of the fitted data can be visualized below.
 
 ![alt text][image5]
 
-####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+Implementation is presented in section **Measuring Curvature** within `Workbook.ipynb`. Again, this is done using the method presented in class. There are two functions defined in the section: `calc_curve()` and `calc_vehicle_offset()`. `calc_curve()` calculates the curvature using the method demonstrated [here](http://www.intmath.com/applications-differentiation/8-radius-curvature.php). `calc_vehicle_offset()` calculates averages of the left and right lanes relative to center of the image. Midpoint of the image is assumed to be the center position of the car. The averages of the two lanes are calculated using the two bottom points of the fitted lanes.
 
-####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step in section **Build the processing pipeline** in `Workbook.ipynb`. Here is an example of my result on a test image:
 
 ![alt text][image6]
 
 ---
 
-###Pipeline (video)
+### Pipeline (video)
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](https://github.com/jaxanc/CarND-Advanced-Lane-Lines/blob/master/processed_project_video.mp4)
 
 ---
 
-###Discussion
+### Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+To create the binary image for detection of the lane lines, I did not use any gradient thresholding. Using only two color channels I was able to get good results in the test images and project video. However, it fails in the more challenging videos. To improve it in the future, I would extract images from these challenging videos and evaluation the function for generating binary image.
+
+Lines detected from the previous frame should be used to help detect the next frame. Previous line would just be shifted down (as a function of the speed). This would also allow the use of filtering to reduce noise on the image.
+
+There are often times when lane markings couldn't be accuractly detected from the image. I was finding it hard to visually distinguish the lines in the more challenging videos. By building in a reject mechanism when there aren't enough data to detect lane lines would improve accuracy.
+
+Instead of using least square fitting, robust regression could be used to reject unwanted noise.
