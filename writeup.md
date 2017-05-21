@@ -13,14 +13,14 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./writeup_images/undistort_output.jpg "Undistorted"
-[image2]: ./writeup_images/distortion_corrected.jpg "Distortion Corrected"
-[image3]: ./writeup_images/binary_combo_example.jpg "Binary Example"
-[image4]: ./writeup_images/warped_straight_lines.jpg "Warp Example"
-[image5]: ./writeup_images/color_fit_lines.jpg "Fit Visual"
-[image6]: ./writeup_images/processed_output.jpg "Output"
+[image1]: ./output_images/undistort_output.jpg "Undistorted"
+[image2]: ./output_images/distortion_corrected.jpg "Distortion Corrected"
+[image3]: ./output_images/binary_combo_example.jpg "Binary Example"
+[image4]: ./output_images/warped_straight_lines.jpg "Warp Example"
+[image5]: ./output_images/color_fit_lines.jpg "Fit Visual"
+[image6]: ./output_images/processed_output.jpg "Output"
 
-## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
+## [Rubric Points](https://review.udacity.com/#!/rubrics/571/view)
 Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
